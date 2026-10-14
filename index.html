@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ふるさと炎祭り 手伝いシフト</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style id="app-css">
+/* layout: one 760px app column — day chips and the current view on top, a fixed tab bar at the bottom (phone first) */
+:root {
+  --bg: #F2F3EF;
+  --surface: #FFFFFF;
+  --ink: #1F2321;
+  --muted: #5D6560;
+  --line: #D8DCD6;
+  --soft: #E8EBE6;
+  --ember: #C2410C;
+  --ember-ink: #9A330A;
+  --ember-soft: #FCE9DC;
+  --flame: #F6A54C;
+  --short: #B93224;
+  --short-soft: #F8E0DC;
+  --warn: #8A5D00;
+  --warn-soft: #F6EAC6;
+  --ok: #2B7349;
+  --ok-soft: #DCEFE2;
+  --bar: #8A948E;
+  --scrim: rgba(20, 22, 21, .45);
+  --f-display: "Dela Gothic One", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+  --f-body: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151413; --surface: #1F1D1B; --ink: #EEE9E3; --muted: #A69D95; --line: #36322E; --soft: #2B2825;
+    --ember: #F07A3C; --ember-ink: #F7A06F; --ember-soft: #3A2418; --flame: #F8C06A;
+    --short: #F06B5B; --short-soft: #3D211D; --warn: #E3B04B; --warn-soft: #3A2F17; --ok: #6CC48D; --ok-soft: #1C3325;
+    --bar: #6F7772; --scrim: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151413; --surface: #1F1D1B; --ink: #EEE9E3; --muted: #A69D95; --line: #36322E; --soft: #2B2825;
+  --ember: #F07A3C; --ember-ink: #F7A06F; --ember-soft: #3A2418; --flame: #F8C06A;
+  --short: #F06B5B; --short-soft: #3D211D; --warn: #E3B04B; --warn-soft: #3A2F17; --ok: #6CC48D; --ok-soft: #1C3325;
+  --bar: #6F7772; --scrim: rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html.lock { overflow: hidden; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; -webkit-text-size-adjust: 100%; }
+h1, h2, h3, p { margin: 0; }
+h2 { font-size: 17px; text-wrap: balance; }
+h3 { font-size: 16px; line-height: 1.4; text-wrap: balance; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.boot { padding: 40px 16px; text-align: center; color: var(--muted); }
+
+/* header */
+.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; }
+.brand { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.mark { flex: none; width: 18px; height: 24px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 72%, var(--flame) 0 28%, var(--ember) 64%); transform: rotate(-8deg); }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: 20px; line-height: 1.3; text-wrap: balance; }
+.top-tools { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.updated { font-size: 11px; color: var(--muted); }
+
+/* controls */
+button { font: inherit; color: inherit; }
+.btn { font-size: 14px; font-weight: 700; line-height: 1.2; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; min-height: 40px; cursor: pointer; white-space: nowrap; }
+.btn.sm { min-height: 32px; padding: 6px 10px; font-size: 13px; }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.btn.danger { color: var(--short); border-color: var(--short); background: transparent; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.on { background: var(--ember-soft); border-color: var(--ember); color: var(--ember-ink); }
+.btn:disabled { opacity: .5; cursor: default; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+
+/* main */
+.main { display: grid; gap: 16px; padding-block: 0 168px; }
+.days { display: flex; gap: 8px; overflow-x: auto; padding-block: 14px 2px; scrollbar-width: none; }
+.days::-webkit-scrollbar { display: none; }
+.day-chip { flex: none; display: flex; flex-direction: column; align-items: flex-start; min-width: 100px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; text-align: left; }
+.day-chip .d1 { font-family: var(--f-num); font-size: 15px; line-height: 1.3; }
+.day-chip .d2 { font-size: 12px; color: var(--muted); }
+.day-chip.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.day-chip.on .d2 { color: inherit; opacity: .8; }
+.day-chip.add { justify-content: center; align-items: center; border-style: dashed; color: var(--muted); min-width: 80px; }
+.day-info { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 14px; }
+.day-info .span { font-family: var(--f-num); }
+.day-info .note { color: var(--muted); min-width: 0; }
+
+.notice { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; }
+.notice .lbl { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--ember-ink); }
+.notice p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.notice .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+.banner { border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; background: var(--warn-soft); color: var(--ink); }
+.banner .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.toast { border-radius: 12px; padding: 10px 14px; background: var(--ember-soft); color: var(--ink); font-size: 14px; }
+
+.sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.sec-head h2 small { font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 6px; }
+.sec-head .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-width: 0; }
+.stat b { display: block; font-family: var(--f-num); font-size: 24px; line-height: 1.2; font-weight: 500; }
+.stat b small { font-size: 13px; color: var(--muted); margin-left: 2px; }
+.stat span { font-size: 12px; color: var(--muted); }
+.stat.alert b { color: var(--short); }
+
+.issues { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.issues li { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.issues .t { font-family: var(--f-num); min-width: 108px; }
+
+.chip { display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; line-height: 1.4; padding: 2px 9px; border-radius: 999px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.chip.short { background: var(--short-soft); color: var(--short); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.legend .lf { width: 16px; height: 8px; border-radius: 4px; background: var(--bar); }
+.legend .ln { width: 2px; height: 14px; background: var(--ink); }
+
+.slots { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.slot + .slot { border-top: 1px solid var(--soft); }
+.slot-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) 50px 76px; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; background: none; border: 0; text-align: left; cursor: pointer; }
+.slot.now { background: var(--ember-soft); }
+.s-time { font-family: var(--f-num); font-size: 14px; line-height: 1.2; }
+.s-time em { display: block; font-style: normal; font-family: var(--f-body); font-size: 10px; font-weight: 700; color: var(--ember-ink); }
+.s-bar { position: relative; height: 10px; border-radius: 5px; background: var(--soft); }
+.s-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; background: var(--bar); }
+.st-short .s-fill { background: var(--short); }
+.st-warn .s-fill { background: var(--warn); }
+.st-ok .s-fill { background: var(--ok); }
+.s-need { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); border-radius: 1px; }
+.s-num { font-family: var(--f-num); font-size: 14px; text-align: right; }
+.s-num small { color: var(--muted); }
+.s-st { text-align: right; }
+.slot-detail { padding: 2px 12px 14px 74px; display: grid; gap: 10px; font-size: 14px; }
+.slot-detail h4 { margin: 0 0 4px; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.slot-detail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+
+.names { display: flex; flex-wrap: wrap; gap: 6px; }
+.name { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--soft); font-size: 13px; line-height: 1.6; }
+.name.as { background: var(--ink); color: var(--surface); }
+.name.out { background: var(--warn-soft); color: var(--warn); }
+.name.none { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+
+.cards { display: grid; gap: 10px; }
+.task { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.task-time { font-family: var(--f-num); font-size: 14px; line-height: 1.35; display: flex; flex-direction: column; }
+.task-time span { color: var(--muted); font-size: 12px; }
+.task-body { display: grid; gap: 6px; min-width: 0; }
+.task-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.task-meta { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.task-note { font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.person { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; }
+.person-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.person-top h3 small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 6px; }
+.tl { position: relative; height: 14px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.tl .a { position: absolute; top: 0; bottom: 0; background: var(--ok); opacity: .45; }
+.tl .k { position: absolute; top: 4px; bottom: 4px; background: var(--ink); border-radius: 2px; }
+.tl-scale { display: flex; justify-content: space-between; font-family: var(--f-num); font-size: 11px; color: var(--muted); margin-top: 2px; }
+.kv { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 2px 10px; font-size: 14px; }
+.kv dt { color: var(--muted); font-size: 12px; padding-top: 2px; }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+
+.me-pick { display: grid; gap: 6px; }
+.me-day { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 8px; }
+.me-day h3 .num { margin-right: 8px; }
+.me-tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.me-tasks li { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 10px; }
+.me-tasks .num { font-size: 14px; }
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 20px 16px; color: var(--muted); text-align: center; display: grid; gap: 10px; justify-items: center; }
+
+/* fixed bars */
+.savebar { position: fixed; left: 0; right: 0; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 20; background: var(--ember-soft); border-top: 1px solid var(--ember); }
+.savebar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-block: 8px; }
+.savebar p { font-size: 13px; font-weight: 700; color: var(--ember-ink); }
+.savebar .acts { display: flex; gap: 8px; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabbar .wrap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tab { height: 58px; background: none; border: 0; border-top: 3px solid transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; }
+.tab.on { color: var(--ink); border-top-color: var(--ember); }
+
+/* sheet */
+.sheet-wrap { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+.scrim { position: absolute; inset: 0; background: var(--scrim); border: 0; cursor: pointer; }
+.sheet { position: relative; width: 100%; max-width: 560px; max-height: calc(100% - 24px - env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; background: var(--surface); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, .25); }
+.sheet-head, .sheet-body, .sheet-foot { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-block: 14px 10px; border-bottom: 1px solid var(--soft); }
+.sheet-body { overflow-y: auto; display: grid; gap: 14px; padding-block: 14px; }
+.sheet-foot { display: flex; justify-content: space-between; gap: 8px; padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--soft); }
+.sheet-foot .r { display: flex; gap: 8px; margin-left: auto; }
+@media (min-width: 640px) { .sheet-wrap { align-items: center; } .sheet { border-radius: 16px; } }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field > label, .field > .lbl { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.hint { font-size: 12px; color: var(--muted); }
+.err { font-size: 13px; font-weight: 700; color: var(--short); }
+input, select, textarea { font: inherit; font-size: 16px; width: 100%; min-width: 0; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+textarea { min-height: 72px; resize: vertical; }
+input[type="time"] { font-family: var(--f-num); }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.row3 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.picks { display: grid; gap: 6px; }
+.pick { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.pick input { width: 20px; height: 20px; flex: none; accent-color: var(--ember); }
+.pick .pn { flex: 1; min-width: 0; }
+.pick .pn small { display: block; font-size: 12px; color: var(--muted); }
+.avail-day { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.avail-day .h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; }
+.avail-day .h b .num { margin-right: 6px; }
+.range { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.copybox { min-height: 220px; font-size: 14px; }
+
+@media (max-width: 420px) {
+  .slot-row { grid-template-columns: 44px minmax(0, 1fr) 44px 68px; gap: 8px; padding: 9px 10px; }
+  .slot-detail { padding-left: 12px; }
+  .stat b { font-size: 20px; }
+  .row3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .row3 > :first-child { grid-column: 1 / -1; }
+  h1 { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div id="app"><p class="boot">読み込み中…</p></div>
+<script type="application/json" id="seed">{"v":1,"updated":"","notice":"炎祭りは時間が長いので、後ほど時間帯別に参加できる時間を確認します。少しでも来られる方はお手伝いをお願いします。\n10/23は前日準備（竹切りなど）です。連日になって申し訳ありませんが、青年部が関わる大きな事業なのでご協力をお願いします。","days":[{"id":"d23","date":"2026-10-23","label":"前日準備","start":"09:00","end":"14:00","note":"午前9時頃から昼過ぎまで。竹切りなどの準備作業"},{"id":"d24","date":"2026-10-24","label":"1日目","start":"09:00","end":"21:00","note":"終日（時間は仮。決まり次第修正）"},{"id":"d25","date":"2026-10-25","label":"2日目","start":"09:00","end":"21:00","note":"終日（時間は仮。決まり次第修正）"}],"tasks":[{"id":"t23a","day":"d23","name":"竹切り・会場準備","start":"09:00","end":"14:00","place":"","need":0,"note":"終了は昼過ぎの予定","who":[]}],"members":[],"avail":{}}</script>
+<script id="app-js">
+(function () {
+  'use strict';
+
+  var TITLE_HEAD = '<title>ふるさと炎祭り 手伝いシフト</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">\n';
+  var RESET = ':root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}';
+  var SC = '</' + 'script>';
+  var WD = ['日', '月', '火', '水', '木', '金', '土'];
+  var TABS = [['time', '時間帯'], ['shift', 'シフト'], ['people', 'メンバー'], ['me', 'わたし']];
+
+  var app = document.getElementById('app');
+  var saved = normalize(JSON.parse(document.getElementById('seed').textContent));
+  var state = clone(saved);
+  var ui = { tab: lsGet('tab') || 'time', day: lsGet('day') || '', me: lsGet('me') || '', edit: false, open: -1, sheet: null, msg: '', restore: null, saving: false };
+  var canEdit = false, art = null, dirty = false;
+
+  // ---------- utilities ----------
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function normalize(s) {
+    s.days = s.days || []; s.tasks = s.tasks || []; s.members = s.members || []; s.avail = s.avail || {}; s.notice = s.notice || '';
+    s.tasks.forEach(function (t) { t.who = t.who || []; t.need = +t.need || 0; });
+    return s;
+  }
+  function lsGet(k) { try { return localStorage.getItem('hm-' + k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem('hm-' + k, v); } catch (e) {} }
+  function lsDel(k) { try { localStorage.removeItem('hm-' + k); } catch (e) {} }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid(p) { return p + Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 6); }
+  function toMin(t) { if (!t) return NaN; var p = String(t).split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
+  function fromMin(m) { var h = Math.floor(m / 60), mm = m % 60; return (h < 10 ? '0' : '') + h + ':' + (mm < 10 ? '0' : '') + mm; }
+  function validTime(t) { return /^\d{1,2}:\d{2}$/.test(t || ''); }
+  function dParts(iso) { var p = String(iso || '').split('-').map(Number); return p.length === 3 && p[0] ? p : null; }
+  function fmtDate(iso) { var p = dParts(iso); if (!p) return '日付未定'; var d = new Date(p[0], p[1] - 1, p[2]); return p[1] + '/' + p[2] + '（' + WD[d.getDay()] + '）'; }
+  function fmtShort(iso) { var p = dParts(iso); if (!p) return '—'; var d = new Date(p[0], p[1] - 1, p[2]); return p[1] + '/' + p[2] + ' ' + WD[d.getDay()]; }
+  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function nowMin() { var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+  function span(a, b) { return a + '–' + b; }
+
+  // ---------- data access ----------
+  function days() { return state.days.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); }
+  function dayById(id) { return state.days.find(function (d) { return d.id === id; }); }
+  function curDay() { return dayById(ui.day); }
+  function memberById(id) { return state.members.find(function (m) { return m.id === id; }); }
+  function members() { return state.members.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'ja'); }); }
+  function mName(id) { var m = memberById(id); return m ? m.name : ''; }
+  function dayTasks(dayId) {
+    return state.tasks.filter(function (t) { return t.day === dayId; })
+      .sort(function (a, b) { return toMin(a.start) - toMin(b.start) || toMin(a.end) - toMin(b.end) || a.name.localeCompare(b.name, 'ja'); });
+  }
+  function ranges(mid, dayId) { return ((state.avail[mid] || {})[dayId]) || []; }
+  function covers(mid, dayId, s, e) { return ranges(mid, dayId).some(function (r) { return toMin(r[0]) <= s && toMin(r[1]) >= e; }); }
+  function overlaps(mid, dayId, s, e) { return ranges(mid, dayId).some(function (r) { return toMin(r[0]) < e && toMin(r[1]) > s; }); }
+  function liveWho(t) { return t.who.filter(function (id) { return memberById(id); }); }
+
+  function ensureDay() {
+    if (dayById(ui.day)) return;
+    var list = days(), today = todayISO();
+    var pick = list.find(function (d) { return d.date === today; }) || list.find(function (d) { return d.date > today; }) || list[0];
+    ui.day = pick ? pick.id : '';
+  }
+
+  function slots(day) {
+    var out = [], s = toMin(day.start), e = toMin(day.end), tasks = dayTasks(day.id);
+    if (!(s < e)) return out;
+    for (var t = s; t < e; t += 30) {
+      var te = Math.min(t + 30, e);
+      var act = tasks.filter(function (k) { return toMin(k.start) < te && toMin(k.end) > t; });
+      var need = 0, unfilled = 0, assigned = {};
+      act.forEach(function (k) {
+        var w = liveWho(k);
+        need += k.need;
+        unfilled += Math.max(0, k.need - w.length);
+        w.forEach(function (id) { assigned[id] = 1; });
+      });
+      var avail = state.members.filter(function (m) { return covers(m.id, day.id, t, te); }).map(function (m) { return m.id; });
+      var pool = {}; avail.forEach(function (id) { pool[id] = 1; }); Object.keys(assigned).forEach(function (id) { pool[id] = 1; });
+      var poolN = Object.keys(pool).length;
+      var st = need === 0 ? 'none' : poolN < need ? 'short' : unfilled > 0 ? 'warn' : 'ok';
+      out.push({ t: t, te: te, act: act, need: need, unfilled: unfilled, assigned: assigned, avail: avail, pool: poolN, st: st, gap: st === 'short' ? need - poolN : st === 'warn' ? unfilled : 0 });
+    }
+    return out;
+  }
+  function issues(sl) {
+    var out = [];
+    sl.forEach(function (x) {
+      if (x.st !== 'short' && x.st !== 'warn') return;
+      var last = out[out.length - 1];
+      if (last && last.st === x.st && last.gap === x.gap && last.te === x.t) last.te = x.te;
+      else out.push({ t: x.t, te: x.te, st: x.st, gap: x.gap });
+    });
+    return out;
+  }
+  function taskStatus(t) {
+    var w = liveWho(t).length;
+    if (!t.need) return { cls: '', label: w ? w + '人 / 人数未定' : '人数未定' };
+    if (w < t.need) return { cls: 'short', label: w + '/' + t.need + '人 あと' + (t.need - w) };
+    if (w > t.need) return { cls: 'ok', label: w + '/' + t.need + '人 +' + (w - t.need) };
+    return { cls: 'ok', label: w + '/' + t.need + '人 OK' };
+  }
+  function stChip(x) {
+    if (x.st === 'short') return '<span class="chip short">不足 ' + x.gap + '</span>';
+    if (x.st === 'warn') return '<span class="chip warn">未割当 ' + x.gap + '</span>';
+    if (x.st === 'ok') return '<span class="chip ok">OK</span>';
+    return '<span class="chip">—</span>';
+  }
+
+  // ---------- views ----------
+  function render() {
+    ensureDay();
+    var h = [];
+    h.push(headerHTML());
+    h.push('<main class="main wrap">');
+    if (ui.tab !== 'me') h.push(dayBarHTML());
+    if (ui.restore) h.push(restoreHTML());
+    if (ui.msg) h.push('<div class="toast" role="status">' + esc(ui.msg) + '</div>');
+    h.push(({ time: timeView, shift: shiftView, people: peopleView, me: meView }[ui.tab] || timeView)());
+    h.push('</main>');
+    h.push(saveBarHTML());
+    h.push(tabBarHTML());
+    h.push(sheetHTML());
+    app.innerHTML = h.join('');
+    document.documentElement.classList.toggle('lock', !!ui.sheet);
+  }
+
+  function headerHTML() {
+    var up = '';
+    if (saved.updated) {
+      var d = new Date(saved.updated);
+      if (!isNaN(d)) up = '<span class="updated">更新 ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + fromMin(d.getHours() * 60 + d.getMinutes()) + '</span>';
+    }
+    var tools = up + (canEdit ? '<button class="btn sm' + (ui.edit ? ' on' : '') + '" data-act="edit-mode" aria-pressed="' + ui.edit + '">' + (ui.edit ? '編集中' : '編集する') + '</button>' : '');
+    return '<header class="top"><div class="wrap"><div class="brand"><span class="mark" aria-hidden="true"></span><div><p class="eyebrow">吉野ヶ里 ふるさと炎祭り</p><h1>青年部 お手伝いシフト</h1></div></div>' +
+      '<div class="top-tools">' + tools + '</div></div></header>';
+  }
+
+  function dayBarHTML() {
+    var h = '<nav class="days" aria-label="日付">';
+    days().forEach(function (d) {
+      h += '<button class="day-chip' + (d.id === ui.day ? ' on' : '') + '" data-act="day" data-id="' + esc(d.id) + '" aria-pressed="' + (d.id === ui.day) + '"><span class="d1">' + esc(fmtShort(d.date)) + '</span><span class="d2">' + esc(d.label) + '</span></button>';
+    });
+    if (ui.edit) h += '<button class="day-chip add" data-act="add-day">＋ 日を追加</button>';
+    h += '</nav>';
+    var d = curDay();
+    if (d) {
+      h += '<div class="day-info"><span class="span">' + esc(span(d.start, d.end)) + '</span>' + (d.note ? '<span class="note">' + esc(d.note) + '</span>' : '') +
+        (ui.edit ? '<button class="btn sm" data-act="edit-day" data-id="' + esc(d.id) + '">この日を編集</button>' : '') + '</div>';
+    }
+    return h;
+  }
+
+  function noticeHTML() {
+    if (!state.notice && !ui.edit) return '';
+    return '<section class="notice"><div class="row"><span class="lbl">お知らせ</span>' + (ui.edit ? '<button class="btn sm" data-act="edit-notice">編集</button>' : '') + '</div>' +
+      '<p>' + (state.notice ? esc(state.notice) : '<span class="muted">（お知らせはありません）</span>') + '</p></section>';
+  }
+
+  function restoreHTML() {
+    var r = ui.restore, other = (r.base || '') !== (saved.updated || '');
+    return '<div class="banner" role="alert"><p><b>保存されていない変更があります。</b>' +
+      (other ? 'その後ほかの人が保存しているため、復元するとその内容を上書きします。' : '前回の編集内容を復元できます。') + '</p>' +
+      '<div class="acts"><button class="btn sm primary" data-act="restore">復元する</button><button class="btn sm" data-act="discard">破棄する</button></div></div>';
+  }
+
+  function empty(msg, btn) { return '<div class="empty"><p>' + msg + '</p>' + (btn || '') + '</div>'; }
+
+  function timeView() {
+    var d = curDay();
+    if (!d) return noticeHTML() + empty('日程がまだありません。', ui.edit ? '<button class="btn primary" data-act="add-day">日を追加</button>' : '');
+    var sl = slots(d), iss = issues(sl);
+    var maxNeed = 0, maxPool = 0;
+    sl.forEach(function (x) { maxNeed = Math.max(maxNeed, x.need); maxPool = Math.max(maxPool, x.pool); });
+    var helpers = state.members.filter(function (m) { return ranges(m.id, d.id).length; }).length;
+    var shortN = iss.filter(function (x) { return x.st === 'short'; }).length;
+    var h = noticeHTML();
+    h += '<section class="stats" aria-label="この日のまとめ">' +
+      '<div class="stat"><b>' + (maxNeed || '—') + (maxNeed ? '<small>人</small>' : '') + '</b><span>必要人数（最大）</span></div>' +
+      '<div class="stat"><b>' + helpers + '<small>人</small></b><span>来られる人</span></div>' +
+      '<div class="stat' + (shortN ? ' alert' : '') + '"><b>' + iss.length + '<small>件</small></b><span>人手の要対応</span></div></section>';
+    if (iss.length) {
+      h += '<ul class="issues" aria-label="要対応の時間帯">' + iss.map(function (x) {
+        return '<li><span class="t">' + span(fromMin(x.t), fromMin(x.te)) + '</span>' + (x.st === 'short' ? '<span class="chip short">人手不足 あと' + x.gap + '人</span>' : '<span class="chip warn">担当未定 ' + x.gap + '人分</span>') + '</li>';
+      }).join('') + '</ul>';
+    }
+    if (!state.members.length) {
+      h += empty('まだ参加できる時間が登録されていません。' + (canEdit ? '「メンバー」タブで名前と来られる時間を登録すると、時間帯ごとの過不足が出ます。' : '運営者が確認後に登録します。'));
+    }
+    if (!sl.length) return h + empty('この日の時間帯が設定されていません。');
+    var scale = Math.max(maxNeed, maxPool, 1);
+    var isToday = d.date === todayISO(), nm = nowMin();
+    h += '<div class="legend"><span><i class="lf"></i>来られる人数</span><span><i class="ln"></i>必要人数</span><span>行をタップすると名前と業務が出ます</span></div>';
+    h += '<ol class="slots">';
+    sl.forEach(function (x, i) {
+      var open = ui.open === i, now = isToday && nm >= x.t && nm < x.te;
+      h += '<li class="slot st-' + x.st + (now ? ' now' : '') + '">' +
+        '<button class="slot-row" data-act="slot" data-i="' + i + '" aria-expanded="' + open + '">' +
+        '<span class="s-time">' + fromMin(x.t) + (now ? '<em>いま</em>' : '') + '</span>' +
+        '<span class="s-bar" aria-hidden="true"><span class="s-fill" style="width:' + (x.pool / scale * 100).toFixed(1) + '%"></span>' + (x.need ? '<span class="s-need" style="left:' + (x.need / scale * 100).toFixed(1) + '%"></span>' : '') + '</span>' +
+        '<span class="s-num">' + x.pool + '<small>/' + (x.need || '–') + '</small></span>' +
+        '<span class="s-st">' + stChip(x) + '</span></button>';
+      if (open) h += slotDetail(x, d);
+      h += '</li>';
+    });
+    h += '</ol>';
+    return h;
+  }
+
+  function slotDetail(x, d) {
+    var h = '<div class="slot-detail">';
+    h += '<div><h4>' + span(fromMin(x.t), fromMin(x.te)) + ' の業務</h4>';
+    if (x.act.length) {
+      h += '<ul>' + x.act.map(function (k) {
+        var w = liveWho(k);
+        return '<li><b>' + esc(k.name) + '</b> <span class="muted num">' + esc(span(k.start, k.end)) + '</span> ・ ' + w.length + '/' + (k.need || '?') + '人' +
+          (w.length ? '：' + w.map(function (id) { return esc(mName(id)); }).join('、') : '') + '</li>';
+      }).join('') + '</ul>';
+    } else h += '<p class="muted">この時間の業務はありません</p>';
+    h += '</div><div><h4>来られる人（' + x.avail.length + '人）</h4>';
+    var ids = x.avail.slice();
+    Object.keys(x.assigned).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+    if (ids.length) {
+      h += '<div class="names">' + ids.map(function (id) {
+        var as = x.assigned[id], out = x.avail.indexOf(id) < 0;
+        return '<span class="name' + (as ? ' as' : '') + (out ? ' out' : '') + '"' + (out ? ' title="参加可能時間の外です"' : '') + '>' + esc(mName(id)) + (out ? '（時間外）' : '') + '</span>';
+      }).join('') + '</div><p class="hint">黒は担当が決まっている人です</p>';
+    } else h += '<p class="muted">登録されていません</p>';
+    return h + '</div></div>';
+  }
+
+  function shiftView() {
+    var d = curDay();
+    if (!d) return empty('日程がまだありません。');
+    var list = dayTasks(d.id);
+    var h = '<div class="sec-head"><h2>' + esc(fmtDate(d.date)) + ' ' + esc(d.label) + '<small>' + list.length + '件</small></h2><div class="acts">' +
+      (list.length ? '<button class="btn sm" data-act="copy">LINE用にコピー</button>' : '') +
+      (ui.edit ? '<button class="btn sm primary" data-act="add-task">＋ 業務を追加</button>' : '') + '</div></div>';
+    if (!list.length) return h + empty('この日の業務はまだ登録されていません。', ui.edit ? '<button class="btn primary" data-act="add-task">業務を追加</button>' : '');
+    h += '<div class="cards">';
+    list.forEach(function (t) {
+      var w = liveWho(t), st = taskStatus(t);
+      var names = w.length ? w.map(function (id) {
+        var out = !covers(id, d.id, toMin(t.start), toMin(t.end));
+        return '<span class="name' + (out ? ' out' : '') + '"' + (out ? ' title="参加可能時間と合っていません"' : '') + '>' + esc(mName(id)) + (out && ui.edit ? '（時間外）' : '') + '</span>';
+      }).join('') : '<span class="name none">担当未定</span>';
+      h += '<article class="task"><div class="task-time"><b>' + esc(t.start) + '</b><span>〜' + esc(t.end) + '</span></div>' +
+        '<div class="task-body"><div class="task-top"><h3>' + esc(t.name) + '</h3><span class="chip ' + st.cls + '">' + esc(st.label) + '</span></div>' +
+        (t.place ? '<p class="task-meta">場所：' + esc(t.place) + '</p>' : '') +
+        (t.note ? '<p class="task-note">' + esc(t.note) + '</p>' : '') +
+        '<div class="names">' + names + '</div>' +
+        (ui.edit ? '<div><button class="btn sm" data-act="edit-task" data-id="' + esc(t.id) + '">編集・担当を決める</button></div>' : '') +
+        '</div></article>';
+    });
+    return h + '</div>';
+  }
+
+  function timeline(mid, d) {
+    var s = toMin(d.start), e = toMin(d.end), w = e - s;
+    if (!(w > 0)) return '';
+    function seg(a, b, cls) {
+      var l = Math.max(0, (toMin(a) - s) / w * 100), r = Math.min(100, (toMin(b) - s) / w * 100);
+      return r > l ? '<span class="' + cls + '" style="left:' + l.toFixed(1) + '%;width:' + (r - l).toFixed(1) + '%"></span>' : '';
+    }
+    var h = '<div><div class="tl" aria-hidden="true">';
+    ranges(mid, d.id).forEach(function (r) { h += seg(r[0], r[1], 'a'); });
+    dayTasks(d.id).forEach(function (t) { if (t.who.indexOf(mid) >= 0) h += seg(t.start, t.end, 'k'); });
+    return h + '</div><div class="tl-scale"><span>' + esc(d.start) + '</span><span>' + esc(d.end) + '</span></div></div>';
+  }
+
+  function peopleView() {
+    var d = curDay(), list = members();
+    var h = '<div class="sec-head"><h2>メンバー<small>' + list.length + '人</small></h2><div class="acts">' +
+      (ui.edit ? '<button class="btn sm primary" data-act="add-member">＋ メンバーを追加</button>' : '') + '</div></div>';
+    if (!list.length) return h + empty('メンバーはまだ登録されていません。', ui.edit ? '<button class="btn primary" data-act="add-member">メンバーを追加</button>' : (canEdit ? '<p class="hint">右上の「編集する」から登録できます。</p>' : ''));
+    if (d) h += '<div class="legend"><span>' + esc(fmtDate(d.date)) + ' ' + esc(d.label) + 'の時間</span><span><i class="lf" style="background:var(--ok);opacity:.45"></i>来られる</span><span><i class="lf" style="background:var(--ink)"></i>担当</span></div>';
+    h += '<div class="cards">';
+    list.forEach(function (m) {
+      var rs = d ? ranges(m.id, d.id) : [];
+      var ts = d ? dayTasks(d.id).filter(function (t) { return t.who.indexOf(m.id) >= 0; }) : [];
+      h += '<article class="person"><div class="person-top"><h3>' + esc(m.name) + (m.note ? '<small>' + esc(m.note) + '</small>' : '') + '</h3>' +
+        (ui.edit ? '<button class="btn sm" data-act="edit-member" data-id="' + esc(m.id) + '">時間を編集</button>' : '') + '</div>';
+      if (d) {
+        h += timeline(m.id, d);
+        h += '<dl class="kv"><dt>来られる</dt><dd class="num">' + (rs.length ? esc(rs.map(function (r) { return span(r[0], r[1]); }).join('、')) : '<span class="muted">未入力・不可</span>') + '</dd>' +
+          '<dt>担当</dt><dd>' + (ts.length ? ts.map(function (t) { return '<span class="num">' + esc(span(t.start, t.end)) + '</span> ' + esc(t.name); }).join('<br>') : '<span class="muted">なし</span>') + '</dd></dl>';
+      }
+      h += '</article>';
+    });
+    return h + '</div>';
+  }
+
+  function meView() {
+    var list = members();
+    var h = noticeHTML();
+    if (!list.length) return h + empty('メンバーはまだ登録されていません。名前が登録されると、ここで自分のシフトだけを見られます。');
+    h += '<div class="field me-pick"><label for="me-select">あなたの名前</label><select id="me-select"><option value="">選んでください</option>' +
+      list.map(function (m) { return '<option value="' + esc(m.id) + '"' + (m.id === ui.me ? ' selected' : '') + '>' + esc(m.name) + '</option>'; }).join('') +
+      '</select><p class="hint">この端末に記憶されます。</p></div>';
+    var me = memberById(ui.me);
+    if (!me) return h;
+    days().forEach(function (d) {
+      var rs = ranges(me.id, d.id);
+      var ts = dayTasks(d.id).filter(function (t) { return t.who.indexOf(me.id) >= 0; });
+      h += '<article class="me-day"><h3><span class="num">' + esc(fmtShort(d.date)) + '</span>' + esc(d.label) + '</h3>' +
+        '<dl class="kv"><dt>来られる</dt><dd class="num">' + (rs.length ? esc(rs.map(function (r) { return span(r[0], r[1]); }).join('、')) : '<span class="muted">未入力</span>') + '</dd></dl>';
+      if (ts.length) {
+        h += '<ul class="me-tasks">' + ts.map(function (t) {
+          var mates = liveWho(t).filter(function (id) { return id !== me.id; }).map(mName);
+          return '<li><span class="num">' + esc(span(t.start, t.end)) + '</span><div><b>' + esc(t.name) + '</b>' +
+            (t.place ? '<p class="task-meta">場所：' + esc(t.place) + '</p>' : '') +
+            (t.note ? '<p class="task-note">' + esc(t.note) + '</p>' : '') +
+            (mates.length ? '<p class="task-meta">一緒に：' + esc(mates.join('、')) + '</p>' : '') + '</div></li>';
+        }).join('') + '</ul>';
+      } else h += '<p class="muted">担当はまだ決まっていません</p>';
+      h += '</article>';
+    });
+    return h;
+  }
+
+  function saveBarHTML() {
+    if (!canEdit || !dirty) return '';
+    return '<div class="savebar"><div class="wrap"><p>' + (ui.saving ? '保存中…' : '未保存の変更あり') + '</p><div class="acts">' +
+      '<button class="btn sm ghost" data-act="revert"' + (ui.saving ? ' disabled' : '') + '>取り消す</button>' +
+      '<button class="btn sm primary" data-act="save"' + (ui.saving ? ' disabled' : '') + '>保存して共有</button></div></div></div>';
+  }
+
+  function tabBarHTML() {
+    return '<nav class="tabbar" aria-label="表示切替"><div class="wrap">' + TABS.map(function (t) {
+      return '<button class="tab' + (ui.tab === t[0] ? ' on' : '') + '" data-act="tab" data-id="' + t[0] + '" aria-current="' + (ui.tab === t[0] ? 'page' : 'false') + '">' + t[1] + '</button>';
+    }).join('') + '</div></nav>';
+  }
+
+  // ---------- sheets (editors) ----------
+  function timeInput(id, v) { return '<input type="time" step="1800" id="' + id + '" value="' + esc(v) + '">'; }
+
+  function sheetHTML() {
+    var s = ui.sheet;
+    if (!s) return '';
+    var title = '', body = '', foot = '';
+    var del = s.draft.id && s.type !== 'notice' && s.type !== 'copy'
+      ? '<button class="btn danger" data-act="sheet-del">' + (s.confirm ? '本当に削除する' : '削除') + '</button>' : '';
+    var okBtn = '<div class="r"><button class="btn" data-act="close">キャンセル</button><button class="btn primary" data-act="apply">反映する</button></div>';
+    if (s.type === 'task') {
+      var t = s.draft;
+      title = t.id ? '業務を編集' : '業務を追加';
+      body += '<div class="field"><label for="f-name">業務名</label><input id="f-name" value="' + esc(t.name) + '" placeholder="例：駐車場誘導、竹灯籠の点火"></div>';
+      body += '<div class="row3"><div class="field"><label for="f-day">日</label><select id="f-day">' + days().map(function (d) {
+        return '<option value="' + esc(d.id) + '"' + (d.id === t.day ? ' selected' : '') + '>' + esc(fmtShort(d.date) + ' ' + d.label) + '</option>';
+      }).join('') + '</select></div><div class="field"><label for="f-start">開始</label>' + timeInput('f-start', t.start) + '</div><div class="field"><label for="f-end">終了</label>' + timeInput('f-end', t.end) + '</div></div>';
+      body += '<div class="row2"><div class="field"><label for="f-place">場所</label><input id="f-place" value="' + esc(t.place) + '"></div>' +
+        '<div class="field"><label for="f-need">必要人数（0＝未定）</label><input id="f-need" type="number" min="0" max="99" inputmode="numeric" value="' + esc(t.need) + '"></div></div>';
+      body += '<div class="field"><label for="f-note">メモ（持ち物・集合など）</label><textarea id="f-note">' + esc(t.note) + '</textarea></div>';
+      body += '<div class="field"><span class="lbl">担当（' + t.who.length + '人選択中）</span>' + pickList(t) + '</div>';
+    } else if (s.type === 'member') {
+      var m = s.draft;
+      title = m.id ? 'メンバーを編集' : 'メンバーを追加';
+      body += '<div class="row2"><div class="field"><label for="f-name">名前</label><input id="f-name" value="' + esc(m.name) + '" autocomplete="off"></div>' +
+        '<div class="field"><label for="f-note">メモ（班・連絡など）</label><input id="f-note" value="' + esc(m.note) + '"></div></div>';
+      body += '<div class="field"><span class="lbl">来られる時間</span><p class="hint">何も入っていない日は「来られない・未確認」として扱います。</p></div>';
+      days().forEach(function (d) {
+        var rs = m.avail[d.id] || [];
+        body += '<div class="avail-day"><div class="h"><b><span class="num">' + esc(fmtShort(d.date)) + '</span>' + esc(d.label) + '</b><span>' +
+          '<button class="btn sm" data-act="r-all" data-id="' + esc(d.id) + '">終日</button> ' +
+          '<button class="btn sm" data-act="r-add" data-id="' + esc(d.id) + '">＋ 時間帯</button> ' +
+          (rs.length ? '<button class="btn sm ghost" data-act="r-clear" data-id="' + esc(d.id) + '">なし</button>' : '') + '</span></div>';
+        rs.forEach(function (r, i) {
+          body += '<div class="range"><input type="time" step="1800" aria-label="開始" data-r="' + esc(d.id) + ':' + i + ':0" value="' + esc(r[0]) + '"><span>〜</span>' +
+            '<input type="time" step="1800" aria-label="終了" data-r="' + esc(d.id) + ':' + i + ':1" value="' + esc(r[1]) + '">' +
+            '<button class="btn sm ghost" data-act="r-del" data-id="' + esc(d.id) + '" data-i="' + i + '" aria-label="この時間帯を削除">削除</button></div>';
+        });
+        if (!rs.length) body += '<p class="hint">未入力</p>';
+        body += '</div>';
+      });
+    } else if (s.type === 'day') {
+      var d = s.draft;
+      title = d.id ? '日程を編集' : '日を追加';
+      body += '<div class="row2"><div class="field"><label for="f-date">日付</label><input type="date" id="f-date" value="' + esc(d.date) + '"></div>' +
+        '<div class="field"><label for="f-label">呼び名</label><input id="f-label" value="' + esc(d.label) + '" placeholder="例：1日目"></div></div>';
+      body += '<div class="row2"><div class="field"><label for="f-start">集合・開始</label>' + timeInput('f-start', d.start) + '</div><div class="field"><label for="f-end">終了</label>' + timeInput('f-end', d.end) + '</div></div>';
+      body += '<div class="field"><label for="f-note">メモ</label><input id="f-note" value="' + esc(d.note) + '"></div>';
+      if (d.id) body += '<p class="hint">この日を削除すると、この日の業務と来られる時間も消えます。</p>';
+    } else if (s.type === 'notice') {
+      title = 'お知らせを編集';
+      body += '<div class="field"><label for="f-text">全員に表示する文章</label><textarea id="f-text" style="min-height:160px">' + esc(s.draft.text) + '</textarea></div>';
+    } else if (s.type === 'copy') {
+      title = 'LINE用の文章';
+      body += '<div class="field"><label for="f-copy">' + (s.copied ? 'コピーしました。そのまま貼り付けできます。' : '長押しで全選択してコピーしてください。') + '</label><textarea id="f-copy" class="copybox" readonly>' + esc(s.draft.text) + '</textarea></div>';
+      okBtn = '<div class="r"><button class="btn primary" data-act="close">閉じる</button></div>';
+    }
+    if (s.err) body = '<p class="err" role="alert">' + esc(s.err) + '</p>' + body;
+    foot = del + okBtn;
+    return '<div class="sheet-wrap"><button class="scrim" data-act="close" aria-label="閉じる" tabindex="-1"></button>' +
+      '<section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><header class="sheet-head"><h2 id="sheet-title">' + title + '</h2>' +
+      '<button class="btn sm ghost" data-act="close">閉じる</button></header><div class="sheet-body">' + body + '</div><footer class="sheet-foot">' + foot + '</footer></section></div>';
+  }
+
+  function pickList(t) {
+    var s = toMin(t.start), e = toMin(t.end), list = members();
+    if (!list.length) return '<p class="hint">先に「メンバー」タブでメンバーを登録してください。</p>';
+    var others = state.tasks.filter(function (k) { return k.id !== t.id && k.day === t.day && toMin(k.start) < e && toMin(k.end) > s; });
+    var rows = list.map(function (m) {
+      var tag, rank;
+      if (!(s < e)) { tag = ''; rank = 1; }
+      else if (covers(m.id, t.day, s, e)) { tag = '参加可'; rank = 0; }
+      else if (overlaps(m.id, t.day, s, e)) { tag = '一部の時間だけ可'; rank = 1; }
+      else if (ranges(m.id, t.day).length) { tag = '時間外'; rank = 2; }
+      else { tag = 'この日は未入力'; rank = 3; }
+      var dup = others.filter(function (k) { return k.who.indexOf(m.id) >= 0; }).map(function (k) { return k.name; });
+      if (dup.length) { tag += (tag ? '・' : '') + '重複：' + dup.join('、'); rank += 0.5; }
+      return { m: m, tag: tag, rank: rank };
+    }).sort(function (a, b) { return a.rank - b.rank; });
+    return '<div class="picks">' + rows.map(function (r) {
+      return '<label class="pick"><input type="checkbox" name="who" value="' + esc(r.m.id) + '"' + (t.who.indexOf(r.m.id) >= 0 ? ' checked' : '') + '>' +
+        '<span class="pn">' + esc(r.m.name) + (r.tag ? '<small>' + esc(r.tag) + '</small>' : '') + '</span></label>';
+    }).join('') + '</div>';
+  }
+
+  function val(id) { var el = document.getElementById(id); return el ? el.value : undefined; }
+  function readSheet() {
+    var s = ui.sheet; if (!s) return;
+    var d = s.draft;
+    if (s.type === 'task') {
+      ['name', 'day', 'start', 'end', 'place', 'note'].forEach(function (k) { var v = val('f-' + k); if (v !== undefined) d[k] = v; });
+      var n = val('f-need'); if (n !== undefined) d.need = Math.max(0, Math.min(99, parseInt(n, 10) || 0));
+      var boxes = app.querySelectorAll('input[name="who"]');
+      if (boxes.length) d.who = Array.prototype.filter.call(boxes, function (b) { return b.checked; }).map(function (b) { return b.value; });
+    } else if (s.type === 'member') {
+      ['name', 'note'].forEach(function (k) { var v = val('f-' + k); if (v !== undefined) d[k] = v; });
+      Array.prototype.forEach.call(app.querySelectorAll('input[data-r]'), function (el) {
+        var p = el.getAttribute('data-r').split(':');
+        var r = (d.avail[p[0]] || [])[+p[1]]; if (r) r[+p[2]] = el.value;
+      });
+    } else if (s.type === 'day') {
+      ['date', 'label', 'start', 'end', 'note'].forEach(function (k) { var v = val('f-' + k); if (v !== undefined) d[k] = v; });
+    } else if (s.type === 'notice') {
+      var t = val('f-text'); if (t !== undefined) d.text = t;
+    }
+  }
+
+  function openSheet(type, draft) { ui.sheet = { type: type, draft: draft, err: '', confirm: false }; render(); focusSheet(); }
+  function focusSheet() { var el = app.querySelector('.sheet-body input:not([type=checkbox]), .sheet-body textarea'); if (el && ui.sheet && ui.sheet.type !== 'copy') { try { el.focus({ preventScroll: true }); } catch (e) {} } }
+
+  function applySheet() {
+    readSheet();
+    var s = ui.sheet, d = s.draft, i;
+    s.err = '';
+    if (s.type === 'task') {
+      d.name = d.name.trim();
+      if (!d.name) s.err = '業務名を入れてください。';
+      else if (!dayById(d.day)) s.err = '日を選んでください。';
+      else if (!validTime(d.start) || !validTime(d.end) || toMin(d.start) >= toMin(d.end)) s.err = '開始と終了の時刻を確認してください（終了は開始より後）。';
+      if (s.err) return render();
+      var task = { id: d.id || uid('t'), day: d.day, name: d.name, start: d.start, end: d.end, place: d.place.trim(), need: d.need, note: d.note.trim(), who: d.who };
+      i = state.tasks.findIndex(function (k) { return k.id === task.id; });
+      if (i >= 0) state.tasks[i] = task; else state.tasks.push(task);
+      ui.day = task.day;
+    } else if (s.type === 'member') {
+      d.name = d.name.trim();
+      if (!d.name) { s.err = '名前を入れてください。'; return render(); }
+      var av = {};
+      Object.keys(d.avail).forEach(function (dayId) {
+        if (!dayById(dayId)) return;
+        var rs = d.avail[dayId].filter(function (r) { return validTime(r[0]) && validTime(r[1]) && toMin(r[0]) < toMin(r[1]); })
+          .sort(function (a, b) { return toMin(a[0]) - toMin(b[0]); });
+        if (rs.length) av[dayId] = rs;
+      });
+      var bad = Object.keys(d.avail).some(function (k) { return d.avail[k].some(function (r) { return !(validTime(r[0]) && validTime(r[1]) && toMin(r[0]) < toMin(r[1])); }); });
+      if (bad && !s.badOk) { s.err = '時刻が正しくない時間帯があります。直すか、もう一度「反映する」を押すとその時間帯を外して保存します。'; s.badOk = true; return render(); }
+      var mem = { id: d.id || uid('m'), name: d.name, note: d.note.trim() };
+      i = state.members.findIndex(function (m) { return m.id === mem.id; });
+      if (i >= 0) state.members[i] = mem; else state.members.push(mem);
+      state.avail[mem.id] = av;
+    } else if (s.type === 'day') {
+      if (!dParts(d.date)) s.err = '日付を入れてください。';
+      else if (!validTime(d.start) || !validTime(d.end) || toMin(d.start) >= toMin(d.end)) s.err = '開始と終了の時刻を確認してください。';
+      if (s.err) return render();
+      var day = { id: d.id || uid('d'), date: d.date, label: d.label.trim() || fmtShort(d.date), start: d.start, end: d.end, note: d.note.trim() };
+      i = state.days.findIndex(function (x) { return x.id === day.id; });
+      if (i >= 0) state.days[i] = day; else state.days.push(day);
+      ui.day = day.id;
+    } else if (s.type === 'notice') {
+      state.notice = d.text.trim();
+    }
+    ui.sheet = null;
+    changed();
+  }
+
+  function deleteFromSheet() {
+    var s = ui.sheet;
+    readSheet();
+    if (!s.confirm) { s.confirm = true; return render(); }
+    var id = s.draft.id;
+    if (s.type === 'task') state.tasks = state.tasks.filter(function (k) { return k.id !== id; });
+    if (s.type === 'member') {
+      state.members = state.members.filter(function (m) { return m.id !== id; });
+      delete state.avail[id];
+      state.tasks.forEach(function (k) { k.who = k.who.filter(function (w) { return w !== id; }); });
+      if (ui.me === id) { ui.me = ''; lsDel('me'); }
+    }
+    if (s.type === 'day') {
+      state.days = state.days.filter(function (d) { return d.id !== id; });
+      state.tasks = state.tasks.filter(function (k) { return k.day !== id; });
+      Object.keys(state.avail).forEach(function (m) { delete state.avail[m][id]; });
+    }
+    ui.sheet = null;
+    changed();
+  }
+
+  // ---------- save / drafts ----------
+  function changed() {
+    dirty = JSON.stringify(state) !== JSON.stringify(saved);
+    if (dirty) lsSet('draft', JSON.stringify({ base: saved.updated || '', state: state }));
+    else lsDel('draft');
+    ui.msg = '';
+    render();
+  }
+
+  function buildDoc(s) {
+    var css = document.getElementById('app-css').textContent;
+    var js = document.getElementById('app-js').textContent;
+    var json = JSON.stringify(s).replace(/</g, '\\u003c').replace(/[\u2028\u2029]/g, function (c) { return '\\u' + c.charCodeAt(0).toString(16); });
+    return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + RESET + '</style></head><body>' +
+      TITLE_HEAD + '<style id="app-css">' + css + '</style>\n<div id="app"><p class="boot">読み込み中…</p></div>\n' +
+      '<script type="application/json" id="seed">' + json + SC + '\n<script id="app-js">' + js + SC + '\n</body></html>';
+  }
+
+  function save() {
+    if (!art || ui.saving) return;
+    ui.saving = true; ui.msg = ''; render();
+    var next = clone(state);
+    next.updated = new Date().toISOString();
+    lsSet('draft', JSON.stringify({ base: saved.updated || '', state: next, saving: true }));
+    Promise.resolve().then(function () { return art.publish(buildDoc(next)); }).then(function () {
+      ui.msg = '保存しました。最新の内容に切り替わります…'; render();
+    }, function (e) {
+      var c = e && e.code;
+      ui.saving = false;
+      if (c === 'conflict') ui.msg = 'ほかの人が先に保存しました。最新の内容に切り替わります。あなたの変更は下書きとして残り、復元できます。';
+      else if (c === 'not_writer' || c === 'not_granted' || c === 'consent_required' || c === 'capability_disabled' || c === 'capability_removed' || c === 'not_declared') {
+        ui.msg = 'この画面からは保存できません。編集権限のあるアカウントで開いてください。'; canEdit = false; ui.edit = false;
+      } else if (c === 'rate_limited') ui.msg = '短い間に何度も保存したため止められました。少し待ってから「保存して共有」を押してください。';
+      else if (c === 'too_large') ui.msg = 'データが大きすぎて保存できません。古い業務やメンバーを整理してください。';
+      else ui.msg = '保存できませんでした。電波の良い場所でもう一度「保存して共有」を押してください。';
+      lsSet('draft', JSON.stringify({ base: saved.updated || '', state: state }));
+      render();
+    });
+  }
+
+  function checkDraft() {
+    var raw = lsGet('draft'); if (!raw) return;
+    var d; try { d = JSON.parse(raw); } catch (e) { lsDel('draft'); return; }
+    if (!d || !d.state) { lsDel('draft'); return; }
+    if (d.saving && d.state.updated === saved.updated) { lsDel('draft'); return; }
+    var a = clone(d.state), b = clone(saved); delete a.updated; delete b.updated;
+    if (JSON.stringify(a) === JSON.stringify(b)) { lsDel('draft'); return; }
+    if (canEdit) ui.restore = d;
+  }
+
+  // ---------- copy text ----------
+  function copyText() {
+    var d = curDay(); if (!d) return '';
+    var lines = ['【' + fmtDate(d.date) + ' ' + d.label + ' お手伝いシフト】'];
+    dayTasks(d.id).forEach(function (t) {
+      var w = liveWho(t).map(mName);
+      lines.push('■' + span(t.start, t.end) + ' ' + t.name + (t.place ? '（' + t.place + '）' : ''));
+      lines.push('　' + (w.length ? w.join('、') : '担当未定') + (t.need ? '　' + w.length + '/' + t.need + '人' : ''));
+    });
+    var iss = issues(slots(d)).filter(function (x) { return x.st === 'short'; });
+    if (iss.length) {
+      lines.push('');
+      lines.push('▼人手が足りない時間');
+      iss.forEach(function (x) { lines.push('・' + span(fromMin(x.t), fromMin(x.te)) + ' あと' + x.gap + '人'); });
+      lines.push('来られる方は連絡をお願いします。');
+    }
+    return lines.join('\n');
+  }
+
+  // ---------- events ----------
+  app.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-act]');
+    if (!b || !app.contains(b) || b.disabled) return;
+    var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
+    if (ui.sheet && act !== 'close') readSheet();
+    switch (act) {
+      case 'tab': ui.tab = id; ui.open = -1; lsSet('tab', id); render(); window.scrollTo(0, 0); break;
+      case 'day': ui.day = id; ui.open = -1; lsSet('day', id); render(); break;
+      case 'slot': var i = +b.getAttribute('data-i'); ui.open = ui.open === i ? -1 : i; render(); break;
+      case 'edit-mode': ui.edit = !ui.edit; render(); break;
+      case 'close': ui.sheet = null; render(); break;
+      case 'apply': applySheet(); break;
+      case 'sheet-del': deleteFromSheet(); break;
+      case 'add-task':
+        var cd = curDay();
+        openSheet('task', { id: '', day: cd ? cd.id : (days()[0] || {}).id, name: '', start: cd ? cd.start : '09:00', end: cd ? fromMin(Math.min(toMin(cd.start) + 120, toMin(cd.end))) : '11:00', place: '', need: 2, note: '', who: [] });
+        break;
+      case 'edit-task': var t = state.tasks.find(function (k) { return k.id === id; }); if (t) openSheet('task', clone(t)); break;
+      case 'add-member': openSheet('member', { id: '', name: '', note: '', avail: {} }); break;
+      case 'edit-member':
+        var m = memberById(id);
+        if (m) openSheet('member', { id: m.id, name: m.name, note: m.note || '', avail: clone(state.avail[m.id] || {}) });
+        break;
+      case 'r-add':
+        var dd = dayById(id), rs = ui.sheet.draft.avail[id] = ui.sheet.draft.avail[id] || [];
+        var last = rs[rs.length - 1], st = last && validTime(last[1]) ? toMin(last[1]) + 60 : toMin(dd.start);
+        st = Math.min(st, toMin(dd.end) - 60);
+        rs.push([fromMin(Math.max(st, 0)), fromMin(Math.min(st + 180, toMin(dd.end)))]);
+        render(); break;
+      case 'r-all': var da = dayById(id); ui.sheet.draft.avail[id] = [[da.start, da.end]]; render(); break;
+      case 'r-clear': ui.sheet.draft.avail[id] = []; render(); break;
+      case 'r-del': ui.sheet.draft.avail[id].splice(+b.getAttribute('data-i'), 1); render(); break;
+      case 'add-day':
+        var ld = days()[days().length - 1], nd = '';
+        if (ld && dParts(ld.date)) { var p = dParts(ld.date), x = new Date(p[0], p[1] - 1, p[2] + 1); nd = x.getFullYear() + '-' + ('0' + (x.getMonth() + 1)).slice(-2) + '-' + ('0' + x.getDate()).slice(-2); }
+        openSheet('day', { id: '', date: nd, label: '', start: '09:00', end: '17:00', note: '' }); break;
+      case 'edit-day': var dy = dayById(id); if (dy) openSheet('day', clone(dy)); break;
+      case 'edit-notice': openSheet('notice', { text: state.notice }); break;
+      case 'copy':
+        var text = copyText();
+        ui.sheet = { type: 'copy', draft: { text: text }, copied: false };
+        var done = function (ok) { if (ui.sheet && ui.sheet.type === 'copy') { ui.sheet.copied = ok; render(); if (!ok) { var ta = document.getElementById('f-copy'); if (ta) { ta.focus(); ta.select(); } } } };
+        try { navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); }); } catch (e) { setTimeout(function () { done(false); }, 0); }
+        render(); break;
+      case 'save': save(); break;
+      case 'revert': state = clone(saved); lsDel('draft'); dirty = false; ui.msg = ''; render(); break;
+      case 'restore':
+        state = normalize(clone(ui.restore.state)); state.updated = saved.updated; ui.restore = null; ui.edit = true; changed(); break;
+      case 'discard': lsDel('draft'); ui.restore = null; render(); break;
+    }
+  });
+
+  app.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (t.id === 'me-select') { ui.me = t.value; if (t.value) lsSet('me', t.value); else lsDel('me'); render(); return; }
+    if (ui.sheet && ui.sheet.type === 'task' && (t.id === 'f-day' || t.id === 'f-start' || t.id === 'f-end')) { readSheet(); render(); var el = document.getElementById(t.id); if (el) try { el.focus({ preventScroll: true }); } catch (e) {} }
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && ui.sheet) { ui.sheet = null; render(); }
+  });
+
+  // ---------- boot ----------
+  render();
+  (function () {
+    var c = window.claude;
+    if (!c || typeof c.use !== 'function') { checkDraft(); return; }
+    Promise.all([
+      c.use('user').then(function (u) { return u ? u.canEdit() : false; }, function () { return false; }),
+      c.use('artifact').catch(function () { return null; })
+    ]).then(function (r) {
+      art = r[1];
+      canEdit = !!(r[0] && art);
+      checkDraft();
+      render();
+    });
+  })();
+})();
+</script>
+</body>
+</html>
