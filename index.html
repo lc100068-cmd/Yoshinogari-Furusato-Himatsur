@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
 <title>ふるさと炎祭り 手伝いシフト</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -232,6 +233,54 @@ input[type="time"] { font-family: var(--f-num); }
   h1 { font-size: 18px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Poster-inspired light theme: vermilion lettering, firework gold, white paper. */
+:root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+  color-scheme: light;
+  --bg: #FBFAF7;
+  --surface: #FFFFFF;
+  --ink: #28231F;
+  --muted: #665E57;
+  --line: #E8E0D8;
+  --soft: #F7F1EB;
+  --ember: #B52220;
+  --ember-ink: #9D1E1D;
+  --ember-soft: #FCECE9;
+  --flame: #D5A246;
+  --short: #B52220;
+  --short-soft: #FBE5E2;
+  --warn: #795109;
+  --warn-soft: #FBF2DB;
+  --ok: #2B7349;
+  --ok-soft: #E3F1E7;
+  --bar: #A99583;
+  --scrim: rgba(32, 25, 21, .42);
+}
+html, body { color-scheme: light; }
+body { background: var(--bg); }
+.top { background: #fff; border-top: 5px solid var(--ember); border-bottom: 1px solid var(--line); }
+.top .wrap { min-height: 144px; padding-block: 16px; }
+.brand { gap: 13px; }
+.mark { width: 5px; height: 66px; border-radius: 4px; background: linear-gradient(180deg, var(--ember) 0 78%, var(--flame) 78% 100%); transform: none; }
+.eyebrow { color: var(--ember-ink); font-weight: 700; font-size: 12px; letter-spacing: .11em; }
+h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size: 23px; font-weight: 700; letter-spacing: .025em; }
+.poster-art { flex: none; margin: 0 0 0 10px; width: 112px; height: 116px; overflow: hidden; border: 1px solid #D9C9BE; border-radius: 9px; box-shadow: 0 3px 12px rgba(80, 38, 20, .13); background: #171514; }
+.poster-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.day-chip { box-shadow: 0 1px 4px rgba(80, 38, 20, .04); }
+.day-chip.on { background: var(--ember); border-color: var(--ember); color: #fff; }
+.day-chip.on .d2 { color: #fff; }
+.notice { border-left: 4px solid var(--ember); box-shadow: 0 2px 10px rgba(80, 38, 20, .035); }
+.stat { box-shadow: 0 2px 10px rgba(80, 38, 20, .035); }
+.btn.primary { background: var(--ember); border-color: var(--ember); color: #fff; }
+.tab.on { color: var(--ember-ink); border-top-color: var(--ember); }
+@media (max-width: 420px) {
+  .top .wrap { min-height: 112px; padding-block: 12px; }
+  .brand { gap: 9px; }
+  .mark { height: 58px; }
+  h1 { font-size: 18px; }
+  .eyebrow { font-size: 10px; letter-spacing: .04em; }
+  .poster-art { width: 78px; height: 84px; margin-left: 0; }
+}
 </style>
 </head>
 <body>
@@ -369,7 +418,7 @@ input[type="time"] { font-family: var(--f-num); }
     }
     var tools = up + (canEdit ? '<button class="btn sm' + (ui.edit ? ' on' : '') + '" data-act="edit-mode" aria-pressed="' + ui.edit + '">' + (ui.edit ? '編集中' : '編集する') + '</button>' : '');
     return '<header class="top"><div class="wrap"><div class="brand"><span class="mark" aria-hidden="true"></span><div><p class="eyebrow">吉野ヶ里 ふるさと炎祭り</p><h1>青年部 お手伝いシフト</h1></div></div>' +
-      '<div class="top-tools">' + tools + '</div></div></header>';
+      '<div class="top-tools">' + tools + '</div><figure class="poster-art"><img src="himatsuri-poster.png" alt="吉野ヶ里ふるさと炎祭りのポスター"></figure></div></header>';
   }
 
   function dayBarHTML() {
