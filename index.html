@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>ふるさと炎祭り 手伝いシフト</title>
+<title>青年部シフト</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -313,7 +313,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
 (function () {
   'use strict';
 
-  var TITLE_HEAD = '<title>ふるさと炎祭り 手伝いシフト</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">\n';
+  var TITLE_HEAD = '<title>青年部シフト</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">\n';
   var RESET = ':root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}';
   var SC = '</' + 'script>';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
@@ -443,7 +443,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
       if (!isNaN(d)) up = '<span class="updated">更新 ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + fromMin(d.getHours() * 60 + d.getMinutes()) + '</span>';
     }
     var tools = up + (canEdit ? '<button class="btn sm' + (ui.edit ? ' on' : '') + '" data-act="edit-mode" aria-pressed="' + ui.edit + '">' + (ui.edit ? '編集中' : '編集する') + '</button>' : '');
-    return '<header class="top"><div class="wrap"><div class="brand"><span class="mark" aria-hidden="true"></span><div><p class="eyebrow">吉野ヶ里 ふるさと炎祭り</p><h1>青年部 お手伝いシフト</h1></div></div>' +
+    return '<header class="top"><div class="wrap"><div class="brand"><span class="mark" aria-hidden="true"></span><div><p class="eyebrow">吉野ヶ里 ふるさと炎祭り</p><h1>青年部シフト</h1></div></div>' +
       '<div class="top-tools">' + tools + '</div><figure class="poster-art"><img src="himatsuri-poster.png" alt="吉野ヶ里ふるさと炎祭りのポスター"></figure></div></header>';
   }
 
