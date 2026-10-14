@@ -496,7 +496,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
       }).join('') + '</ul>';
     }
     if (!members().length) {
-      h += empty('まだ参加できる時間が登録されていません。' + (canEdit ? '「メンバー」タブで名前と来られる時間を登録すると、時間帯ごとの過不足が出ます。' : '運営者が確認後に登録します。'));
+      h += empty('まだ参加できる時間が登録されていません。' + (canEdit ? '「メンバー」タブで名前と来られる時間を登録すると、時間帯ごとの過不足が出ます。' : '「入力」タブから参加できる時間を登録してください。'));
     }
     if (!sl.length) return h + empty('この日の時間帯が設定されていません。');
     var scale = Math.max(maxNeed, maxPool, 1);
@@ -583,7 +583,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     var d = curDay(), list = members();
     var h = '<div class="sec-head"><h2>メンバー<small>' + list.length + '人</small></h2><div class="acts">' +
       (ui.edit ? '<button class="btn sm primary" data-act="add-member">＋ メンバーを追加</button>' : '') + '</div></div>';
-    if (!list.length) return h + empty('メンバーはまだ登録されていません。', ui.edit ? '<button class="btn primary" data-act="add-member">メンバーを追加</button>' : (canEdit ? '<p class="hint">右上の「編集する」から登録できます。</p>' : ''));
+    if (!list.length) return h + empty('メンバーはまだ登録されていません。', ui.edit ? '<button class="btn primary" data-act="add-member">メンバーを追加</button>' : '<p class="hint">「入力」タブから登録できます。</p>');
     if (d) h += '<div class="legend"><span>' + esc(fmtDate(d.date)) + ' ' + esc(d.label) + 'の時間</span><span><i class="lf" style="background:var(--ok);opacity:.45"></i>来られる</span><span><i class="lf" style="background:var(--ink)"></i>担当</span></div>';
     h += '<div class="cards">';
     list.forEach(function (m) {
