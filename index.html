@@ -190,7 +190,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .savebar p { font-size: 13px; font-weight: 700; color: var(--ember-ink); }
 .savebar .acts { display: flex; gap: 8px; }
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.tabbar .wrap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tabbar .wrap { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .tab { height: 58px; background: none; border: 0; border-top: 3px solid transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; }
 .tab.on { color: var(--ink); border-top-color: var(--ember); }
 
@@ -281,6 +281,29 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
   .eyebrow { font-size: 10px; letter-spacing: .04em; }
   .poster-art { width: 78px; height: 84px; margin-left: 0; }
 }
+
+/* Participant intake */
+.intake-card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:clamp(16px,4vw,28px); box-shadow:0 8px 28px rgba(80,38,20,.05); }
+.intake-head { margin-bottom:18px; }
+.intake-head .eyebrow { margin:0 0 5px; }
+.intake-head h2 { margin:0 0 6px; font-size:23px; }
+.intake-head p { margin:0; color:var(--muted); line-height:1.7; }
+.intake-grid { display:grid; gap:14px; }
+.intake-day { background:var(--bg); border:1px solid var(--line); border-radius:14px; padding:14px; }
+.intake-day-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:9px; }
+.intake-day-head h3 { margin:0; font-size:16px; }
+.intake-day-head small { display:block; color:var(--muted); font-weight:400; margin-top:2px; }
+.intake-range { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto; gap:7px; align-items:center; margin-top:7px; }
+.intake-range select { font-family:var(--f-num); }
+.intake-day .hint { margin:7px 0; }
+.intake-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.intake-foot { border-top:1px solid var(--line); padding-top:18px; margin-top:20px; }
+.intake-foot .btn { width:100%; min-height:48px; font-size:16px; }
+.intake-status { margin:12px 0 0; min-height:1.5em; font-weight:700; color:var(--ember-ink); }
+.intake-status.ok { color:var(--ok); }
+.intake-status.error { color:var(--short); }
+.intake-privacy { margin:12px 0 0; color:var(--muted); font-size:12px; line-height:1.6; }
+@media(max-width:420px){ .intake-range { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); } .intake-range .remove-range { grid-column:1/-1; justify-self:end; } .tab { font-size:11px; } }
 </style>
 </head>
 <body>
@@ -294,13 +317,16 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
   var RESET = ':root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}';
   var SC = '</' + 'script>';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
-  var TABS = [['time', '時間帯'], ['shift', 'シフト'], ['people', 'メンバー'], ['me', 'わたし']];
+  var TABS = [['input', '入力'], ['time', '時間帯'], ['shift', 'シフト'], ['people', 'メンバー'], ['me', 'わたし']];
 
   var app = document.getElementById('app');
   var saved = normalize(JSON.parse(document.getElementById('seed').textContent));
   var state = clone(saved);
-  var ui = { tab: lsGet('tab') || 'time', day: lsGet('day') || '', me: lsGet('me') || '', edit: false, open: -1, sheet: null, msg: '', restore: null, saving: false };
+  var ui = { tab: lsGet('tab') || 'input', day: lsGet('day') || '', me: lsGet('me') || '', edit: false, open: -1, sheet: null, msg: '', restore: null, saving: false };
   var canEdit = false, art = null, dirty = false;
+  var API_URL = 'https://script.google.com/macros/s/AKfycbxgFVeGr3G37y6pLvtLZXEnrkz2Kj5twFAsPTMejEv1mgiXl30TGEDjy89sOQjMBknv/exec';
+  var liveMembers = [], liveAvail = {}, liveLoaded = false, intakeStatus = '', pending = null;
+  var intake = loadIntake();
 
   // ---------- utilities ----------
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -328,14 +354,14 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
   function days() { return state.days.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }); }
   function dayById(id) { return state.days.find(function (d) { return d.id === id; }); }
   function curDay() { return dayById(ui.day); }
-  function memberById(id) { return state.members.find(function (m) { return m.id === id; }); }
-  function members() { return state.members.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'ja'); }); }
+  function memberById(id) { return liveMembers.find(function (m) { return m.id === id; }) || state.members.find(function (m) { return m.id === id; }); }
+  function members() { return state.members.filter(function (m) { return !liveAvail[m.id]; }).concat(liveMembers).sort(function (a, b) { return a.name.localeCompare(b.name, 'ja'); }); }
   function mName(id) { var m = memberById(id); return m ? m.name : ''; }
   function dayTasks(dayId) {
     return state.tasks.filter(function (t) { return t.day === dayId; })
       .sort(function (a, b) { return toMin(a.start) - toMin(b.start) || toMin(a.end) - toMin(b.end) || a.name.localeCompare(b.name, 'ja'); });
   }
-  function ranges(mid, dayId) { return ((state.avail[mid] || {})[dayId]) || []; }
+  function ranges(mid, dayId) { return ((liveAvail[mid] || state.avail[mid] || {})[dayId]) || []; }
   function covers(mid, dayId, s, e) { return ranges(mid, dayId).some(function (r) { return toMin(r[0]) <= s && toMin(r[1]) >= e; }); }
   function overlaps(mid, dayId, s, e) { return ranges(mid, dayId).some(function (r) { return toMin(r[0]) < e && toMin(r[1]) > s; }); }
   function liveWho(t) { return t.who.filter(function (id) { return memberById(id); }); }
@@ -360,7 +386,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
         unfilled += Math.max(0, k.need - w.length);
         w.forEach(function (id) { assigned[id] = 1; });
       });
-      var avail = state.members.filter(function (m) { return covers(m.id, day.id, t, te); }).map(function (m) { return m.id; });
+      var avail = members().filter(function (m) { return covers(m.id, day.id, t, te); }).map(function (m) { return m.id; });
       var pool = {}; avail.forEach(function (id) { pool[id] = 1; }); Object.keys(assigned).forEach(function (id) { pool[id] = 1; });
       var poolN = Object.keys(pool).length;
       var st = need === 0 ? 'none' : poolN < need ? 'short' : unfilled > 0 ? 'warn' : 'ok';
@@ -398,10 +424,10 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     var h = [];
     h.push(headerHTML());
     h.push('<main class="main wrap">');
-    if (ui.tab !== 'me') h.push(dayBarHTML());
+    if (ui.tab !== 'me' && ui.tab !== 'input') h.push(dayBarHTML());
     if (ui.restore) h.push(restoreHTML());
     if (ui.msg) h.push('<div class="toast" role="status">' + esc(ui.msg) + '</div>');
-    h.push(({ time: timeView, shift: shiftView, people: peopleView, me: meView }[ui.tab] || timeView)());
+    h.push(({ input: intakeView, time: timeView, shift: shiftView, people: peopleView, me: meView }[ui.tab] || timeView)());
     h.push('</main>');
     h.push(saveBarHTML());
     h.push(tabBarHTML());
@@ -457,7 +483,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     var sl = slots(d), iss = issues(sl);
     var maxNeed = 0, maxPool = 0;
     sl.forEach(function (x) { maxNeed = Math.max(maxNeed, x.need); maxPool = Math.max(maxPool, x.pool); });
-    var helpers = state.members.filter(function (m) { return ranges(m.id, d.id).length; }).length;
+    var helpers = members().filter(function (m) { return ranges(m.id, d.id).length; }).length;
     var shortN = iss.filter(function (x) { return x.st === 'short'; }).length;
     var h = noticeHTML();
     h += '<section class="stats" aria-label="この日のまとめ">' +
@@ -469,7 +495,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
         return '<li><span class="t">' + span(fromMin(x.t), fromMin(x.te)) + '</span>' + (x.st === 'short' ? '<span class="chip short">人手不足 あと' + x.gap + '人</span>' : '<span class="chip warn">担当未定 ' + x.gap + '人分</span>') + '</li>';
       }).join('') + '</ul>';
     }
-    if (!state.members.length) {
+    if (!members().length) {
       h += empty('まだ参加できる時間が登録されていません。' + (canEdit ? '「メンバー」タブで名前と来られる時間を登録すると、時間帯ごとの過不足が出ます。' : '運営者が確認後に登録します。'));
     }
     if (!sl.length) return h + empty('この日の時間帯が設定されていません。');
@@ -564,7 +590,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
       var rs = d ? ranges(m.id, d.id) : [];
       var ts = d ? dayTasks(d.id).filter(function (t) { return t.who.indexOf(m.id) >= 0; }) : [];
       h += '<article class="person"><div class="person-top"><h3>' + esc(m.name) + (m.note ? '<small>' + esc(m.note) + '</small>' : '') + '</h3>' +
-        (ui.edit ? '<button class="btn sm" data-act="edit-member" data-id="' + esc(m.id) + '">時間を編集</button>' : '') + '</div>';
+        (ui.edit && !liveAvail[m.id] ? '<button class="btn sm" data-act="edit-member" data-id="' + esc(m.id) + '">時間を編集</button>' : '') + '</div>';
       if (d) {
         h += timeline(m.id, d);
         h += '<dl class="kv"><dt>来られる</dt><dd class="num">' + (rs.length ? esc(rs.map(function (r) { return span(r[0], r[1]); }).join('、')) : '<span class="muted">未入力・不可</span>') + '</dd>' +
@@ -614,6 +640,122 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     return '<nav class="tabbar" aria-label="表示切替"><div class="wrap">' + TABS.map(function (t) {
       return '<button class="tab' + (ui.tab === t[0] ? ' on' : '') + '" data-act="tab" data-id="' + t[0] + '" aria-current="' + (ui.tab === t[0] ? 'page' : 'false') + '">' + t[1] + '</button>';
     }).join('') + '</div></nav>';
+  }
+
+
+  // ---------- participant intake ----------
+  function loadIntake() {
+    try {
+      var data = JSON.parse(lsGet('intake-draft') || '{}');
+      return { name: data.name || '', avail: data.avail || { d23: [], d24: [], d25: [] } };
+    } catch (e) { return { name: '', avail: { d23: [], d24: [], d25: [] } }; }
+  }
+  function saveIntake() { lsSet('intake-draft', JSON.stringify(intake)); }
+  function randomKey() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    var bytes = new Uint8Array(16); crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 15) | 64; bytes[8] = (bytes[8] & 63) | 128;
+    var x = Array.from(bytes).map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join('');
+    return x.slice(0,8)+'-'+x.slice(8,12)+'-'+x.slice(12,16)+'-'+x.slice(16,20)+'-'+x.slice(20);
+  }
+  function timeOptions(start, end, value) {
+    var h = '';
+    for (var t = toMin(start); t <= toMin(end); t += 30) {
+      var v = fromMin(t);
+      h += '<option value="' + v + '"' + (v === value ? ' selected' : '') + '>' + v + '</option>';
+    }
+    return h;
+  }
+  function intakeView() {
+    var h = '<section class="intake-card"><div class="intake-head"><p class="eyebrow">参加できる時間を教えてください</p><h2>お手伝いの予定を入力</h2><p>お名前と参加できる時間を選ぶだけで登録できます。あとからこの端末で修正できます。</p></div>' +
+      '<div class="field"><label for="intake-name">お名前</label><input id="intake-name" maxlength="40" autocomplete="name" placeholder="例：山田 太郎" value="' + esc(intake.name) + '"></div><div class="intake-grid">';
+    state.days.filter(function (d) { return d.id === 'd23' || d.id === 'd24' || d.id === 'd25'; }).forEach(function (d) {
+      var rs = intake.avail[d.id] || [];
+      h += '<div class="intake-day"><div class="intake-day-head"><div><h3>' + esc(fmtDate(d.date)) + ' ' + esc(d.label) + '</h3><small>' + esc(d.start + '〜' + d.end) + '</small></div></div>';
+      if (!rs.length) h += '<p class="hint">この日は参加できない・未定</p>';
+      rs.forEach(function (r, i) {
+        h += '<div class="intake-range"><select aria-label="開始時間" data-intake-day="' + d.id + '" data-intake-index="' + i + '" data-intake-part="0">' + timeOptions(d.start, d.end, r[0]) + '</select><span>〜</span>' +
+          '<select aria-label="終了時間" data-intake-day="' + d.id + '" data-intake-index="' + i + '" data-intake-part="1">' + timeOptions(d.start, d.end, r[1]) + '</select>' +
+          '<button class="btn sm ghost remove-range" data-act="intake-remove" data-id="' + d.id + '" data-i="' + i + '" aria-label="時間帯を削除">削除</button></div>';
+      });
+      h += '<div class="intake-actions"><button class="btn sm" data-act="intake-add" data-id="' + d.id + '"' + (rs.length >= 4 ? ' disabled' : '') + '>＋ 時間帯を追加</button>' +
+        '<button class="btn sm ghost" data-act="intake-all" data-id="' + d.id + '">全時間</button></div></div>';
+    });
+    h += '</div><div class="intake-foot"><button class="btn primary" data-act="intake-submit"' + (pending ? ' disabled' : '') + '>' + (pending ? '送信中…' : 'この内容で登録する') + '</button>' +
+      '<p class="intake-status' + (intakeStatus.indexOf('登録しました') >= 0 ? ' ok' : intakeStatus ? ' error' : '') + '" role="status">' + esc(intakeStatus) + '</p>' +
+      '<p class="intake-privacy">入力したお名前と参加できる時間は、公開シフト表に表示されます。修正用の情報はこの端末に保存されます。</p></div></section>';
+    return h;
+  }
+  function readIntake() {
+    var name = document.getElementById('intake-name');
+    if (name) intake.name = name.value;
+    app.querySelectorAll('[data-intake-day]').forEach(function (el) {
+      var d = el.getAttribute('data-intake-day'), i = +el.getAttribute('data-intake-index'), p = +el.getAttribute('data-intake-part');
+      if (intake.avail[d] && intake.avail[d][i]) intake.avail[d][i][p] = el.value;
+    });
+    saveIntake();
+  }
+  function validIntake() {
+    var name = intake.name.trim().replace(/\s+/g, ' ');
+    if (!name || name.length > 40) return 'お名前を入力してください。';
+    var count = 0;
+    for (var j = 0; j < 3; j++) {
+      var d = state.days.find(function (x) { return x.id === ['d23','d24','d25'][j]; });
+      if (!d) continue;
+      var rs = intake.avail[d.id] || [];
+      rs.sort(function (a,b) { return toMin(a[0]) - toMin(b[0]); });
+      var last = toMin(d.start);
+      for (var k = 0; k < rs.length; k++) {
+        var a = toMin(rs[k][0]), b = toMin(rs[k][1]);
+        if (a < toMin(d.start) || b > toMin(d.end) || a >= b || a < last) return esc(d.label) + 'の時間帯を確認してください。重なりや開始・終了の逆転があります。';
+        last = b; count++;
+      }
+    }
+    if (!count) return '参加できる時間帯を1つ以上選んでください。';
+    intake.name = name; saveIntake(); return '';
+  }
+  function loadLive() {
+    var old = document.getElementById('live-json');
+    if (old) old.remove();
+    var s = document.createElement('script');
+    s.id = 'live-json'; s.src = API_URL + '?action=list&t=' + Date.now();
+    s.onerror = function () { if (pending) { intakeStatus = '通信できませんでした。少し待って再送してください。'; pending = null; render(); } };
+    document.head.appendChild(s);
+  }
+  window.hmReceiveAvailability = function (data) {
+    var records = data && Array.isArray(data.members) ? data.members : [];
+    liveMembers = records.filter(function (r) { return r && typeof r.id === 'string' && typeof r.name === 'string' && r.avail; }).map(function (r) { return { id:r.id, name:r.name, note:'' }; });
+    liveAvail = {};
+    records.forEach(function (r) { if (r && r.id && r.avail) liveAvail[r.id] = r.avail; });
+    liveLoaded = true;
+    if (pending) {
+      var found = records.find(function (r) { return r.id === pending.id; });
+      if (found && found.name === pending.name && JSON.stringify(found.avail) === JSON.stringify(pending.avail)) {
+        pending = null; intakeStatus = '登録しました。シフト表にも反映されています。'; ui.me = found.id; lsSet('me', found.id);
+      } else if (++pending.attempts < 8) {
+        setTimeout(loadLive, 1500);
+      } else { pending = null; intakeStatus = '反映を確認できませんでした。少し待って再送してください。'; }
+    }
+    if (ui.tab === 'input') readIntake();
+    render();
+  };
+  function submitIntake() {
+    readIntake();
+    var error = validIntake();
+    if (error) { intakeStatus = error; render(); return; }
+    var id = lsGet('intake-id') || randomKey(), token = lsGet('intake-token') || randomKey();
+    lsSet('intake-id', id); lsSet('intake-token', token);
+    var avail = { d23:intake.avail.d23 || [], d24:intake.avail.d24 || [], d25:intake.avail.d25 || [] };
+    var payload = { id:id, token:token, name:intake.name, avail:avail, website:'' };
+    pending = { id:id, name:intake.name, avail:avail, attempts:0 };
+    intakeStatus = ''; render();
+    var frame = document.getElementById('intake-target');
+    if (!frame) { frame = document.createElement('iframe'); frame.id='intake-target'; frame.name='intake-target'; frame.hidden=true; document.body.appendChild(frame); }
+    var form = document.createElement('form'); form.method='POST'; form.action=API_URL; form.target='intake-target'; form.style.display='none';
+    var field = document.createElement('input'); field.name='payload'; field.value=JSON.stringify(payload); form.appendChild(field); document.body.appendChild(form);
+    frame.onload = function () { setTimeout(loadLive, 700); };
+    form.submit(); form.remove();
+    setTimeout(function () { if (pending) loadLive(); }, 2500);
   }
 
   // ---------- sheets (editors) ----------
@@ -867,7 +1009,14 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     if (!b || !app.contains(b) || b.disabled) return;
     var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
     if (ui.sheet && act !== 'close') readSheet();
+    if (ui.tab === 'input') readIntake();
     switch (act) {
+      case 'intake-add':
+        var day = dayById(id), arr = intake.avail[id] = intake.avail[id] || [];
+        if (day && arr.length < 4) { var start = arr.length ? arr[arr.length-1][1] : day.start; if (toMin(start) >= toMin(day.end)) start = day.start; arr.push([start, fromMin(Math.min(toMin(start)+60,toMin(day.end)))]); saveIntake(); render(); } break;
+      case 'intake-all': var full = dayById(id); if (full) { intake.avail[id] = [[full.start,full.end]]; saveIntake(); render(); } break;
+      case 'intake-remove': if (intake.avail[id]) { intake.avail[id].splice(+b.getAttribute('data-i'),1); saveIntake(); render(); } break;
+      case 'intake-submit': submitIntake(); break;
       case 'tab': ui.tab = id; ui.open = -1; lsSet('tab', id); render(); window.scrollTo(0, 0); break;
       case 'day': ui.day = id; ui.open = -1; lsSet('day', id); render(); break;
       case 'slot': var i = +b.getAttribute('data-i'); ui.open = ui.open === i ? -1 : i; render(); break;
@@ -916,6 +1065,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
 
   app.addEventListener('change', function (ev) {
     var t = ev.target;
+    if (t.id === 'intake-name' || t.hasAttribute('data-intake-day')) { readIntake(); intakeStatus = ''; return; }
     if (t.id === 'me-select') { ui.me = t.value; if (t.value) lsSet('me', t.value); else lsDel('me'); render(); return; }
     if (ui.sheet && ui.sheet.type === 'task' && (t.id === 'f-day' || t.id === 'f-start' || t.id === 'f-end')) { readSheet(); render(); var el = document.getElementById(t.id); if (el) try { el.focus({ preventScroll: true }); } catch (e) {} }
   });
@@ -926,6 +1076,8 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
 
   // ---------- boot ----------
   render();
+  loadLive();
+  setInterval(loadLive, 45000);
   (function () {
     var c = window.claude;
     if (!c || typeof c.use !== 'function') { checkDraft(); return; }
