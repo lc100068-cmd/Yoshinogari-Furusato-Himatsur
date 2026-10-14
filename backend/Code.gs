@@ -6,6 +6,7 @@ var DAY_WINDOWS = {
   d25: ['09:00', '21:00']
 };
 var MAX_MEMBERS = 200;
+var MAX_POSTS = 200;
 
 function doGet(e) {
   var action = e && e.parameter && e.parameter.action;
@@ -20,8 +21,9 @@ function doGet(e) {
       updated: record.updated
     };
   });
+  var posts = listPosts_().map(function (post) { return { id: post.id, name: post.name, message: post.message, created: post.created }; });
   return ContentService
-    .createTextOutput('window.hmReceiveAvailability(' + JSON.stringify({ members: records }) + ');')
+    .createTextOutput('window.hmReceiveAvailability(' + JSON.stringify({ members: records, posts: posts }) + ');')
     .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
@@ -31,6 +33,7 @@ function doPost(e) {
     if (!raw || raw.length > 6000) throw new Error('Invalid payload');
     var input = JSON.parse(raw);
     if (input.website) return ContentService.createTextOutput('OK'); // Honeypot.
+    if (input.kind === 'post') return savePost_(input);
     var record = validateRecord_(input);
     var lock = LockService.getScriptLock();
     lock.waitLock(10000);
@@ -53,6 +56,41 @@ function doPost(e) {
     console.error(String(err));
     return ContentService.createTextOutput('ERROR');
   }
+}
+
+
+function savePost_(input) {
+  var id = String(input.id || '');
+  var memberId = String(input.memberId || '');
+  var token = String(input.token || '');
+  var message = String(input.message || '').trim();
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !/^[0-9a-f-]{36}$/i.test(memberId) || !/^[0-9a-f-]{36}$/i.test(token)) throw new Error('Invalid post key');
+  if (!message || message.length > 300 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(message)) throw new Error('Invalid message');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var store = PropertiesService.getScriptProperties();
+    var memberRaw = store.getProperty('member:' + memberId);
+    if (!memberRaw) throw new Error('Member is not registered');
+    var member = JSON.parse(memberRaw);
+    if (member.tokenHash !== sha256_(token)) throw new Error('Edit key does not match');
+    if (listPosts_().length >= MAX_POSTS) throw new Error('Post limit reached');
+    if (store.getProperty('post:' + id)) throw new Error('Duplicate post');
+    store.setProperty('post:' + id, JSON.stringify({
+      id: id, name: member.name, message: message, created: new Date().toISOString()
+    }));
+  } finally {
+    lock.releaseLock();
+  }
+  return ContentService.createTextOutput('OK');
+}
+
+function listPosts_() {
+  var values = PropertiesService.getScriptProperties().getProperties();
+  return Object.keys(values).filter(function (key) { return key.indexOf('post:') === 0; })
+    .map(function (key) { try { return JSON.parse(values[key]); } catch (_) { return null; } })
+    .filter(function (post) { return post && post.id && post.name && post.message; })
+    .sort(function (a, b) { return a.created < b.created ? 1 : a.created > b.created ? -1 : 0; });
 }
 
 function validateRecord_(input) {
