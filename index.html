@@ -190,7 +190,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .savebar p { font-size: 13px; font-weight: 700; color: var(--ember-ink); }
 .savebar .acts { display: flex; gap: 8px; }
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.tabbar .wrap { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tabbar .wrap { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .tab { height: 58px; background: none; border: 0; border-top: 3px solid transparent; color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; }
 .tab.on { color: var(--ink); border-top-color: var(--ember); }
 
@@ -304,6 +304,37 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
 .intake-status.error { color:var(--short); }
 .intake-privacy { margin:12px 0 0; color:var(--muted); font-size:12px; line-height:1.6; }
 @media(max-width:420px){ .intake-range { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); } .intake-range .remove-range { grid-column:1/-1; justify-self:end; } .tab { font-size:11px; } }
+
+/* Intake-first navigation and completion screen. */
+.tabbar .wrap { grid-template-columns:repeat(6,minmax(0,1fr)); }
+.tab { padding-inline:2px; }
+.done-card { background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:clamp(22px,5vw,40px); text-align:center; box-shadow:0 8px 28px rgba(80,38,20,.05); }
+.done-badge { display:grid; place-items:center; width:68px; height:68px; margin:0 auto 18px; border-radius:50%; background:var(--ok-soft); color:var(--ok); font-size:34px; font-weight:700; }
+.done-card h2 { margin:6px 0 10px; font-size:24px; }
+.done-card p { line-height:1.7; }
+.done-actions { display:grid; gap:10px; max-width:320px; margin:24px auto 18px; }
+.done-actions .btn { min-height:48px; }
+.link-button { border:0; padding:0; background:none; color:var(--ember-ink); font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+.intake-jump { margin:16px 0 0; color:var(--muted); font-size:13px; }
+@media(max-width:420px){ .tab { font-size:10px; } }
+
+/* Shared notice and participant board. */
+.board-page { display:grid; gap:16px; }
+.board-head h2 { margin:4px 0 6px; font-size:24px; }
+.board-head p { margin:0; color:var(--muted); line-height:1.6; }
+.board-head .eyebrow { color:var(--ember-ink); }
+.board-card { padding:clamp(16px,4vw,26px); background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:0 5px 18px rgba(80,38,20,.04); }
+.board-card h2 { margin:0 0 12px; font-size:19px; }
+.board-card .sec-head { margin:0 0 10px; }
+.board-empty { color:var(--muted); margin:4px 0; }
+.board-posts { display:grid; gap:10px; }
+.board-post { padding:13px 14px; background:var(--bg); border:1px solid var(--line); border-radius:12px; }
+.board-post-head { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+.board-post-head time { color:var(--muted); font-size:12px; white-space:nowrap; }
+.board-post p { margin:8px 0 0; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; }
+.board-author { color:var(--muted); }
+.board-submit { margin-top:12px; min-height:44px; }
+.board-status { min-height:1.4em; color:var(--ember-ink); font-weight:700; }
 </style>
 </head>
 <body>
@@ -317,16 +348,17 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
   var RESET = ':root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}';
   var SC = '</' + 'script>';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
-  var TABS = [['input', '入力'], ['time', '時間帯'], ['shift', 'シフト'], ['people', 'メンバー'], ['me', 'わたし']];
+  var TABS = [['input', '入力'], ['time', '時間帯'], ['shift', 'シフト'], ['people', 'メンバー'], ['board', '掲示板'], ['me', 'わたし']];
 
   var app = document.getElementById('app');
   var saved = normalize(JSON.parse(document.getElementById('seed').textContent));
   var state = clone(saved);
-  var ui = { tab: lsGet('tab') || 'input', day: lsGet('day') || '', me: lsGet('me') || '', edit: false, open: -1, sheet: null, msg: '', restore: null, saving: false };
+  var ui = { tab: 'input', day: lsGet('day') || '', me: lsGet('me') || '', edit: false, open: -1, sheet: null, msg: '', restore: null, saving: false };
   var canEdit = false, art = null, dirty = false;
   var API_URL = 'https://script.google.com/macros/s/AKfycbxgFVeGr3G37y6pLvtLZXEnrkz2Kj5twFAsPTMejEv1mgiXl30TGEDjy89sOQjMBknv/exec';
   var liveMembers = [], liveAvail = {}, liveLoaded = false, intakeStatus = '', pending = null;
   var intake = loadIntake();
+  var boardPosts = [], boardReady = false, boardDraft = lsGet('board-draft') || '', boardStatus = '', boardPending = null;
 
   // ---------- utilities ----------
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -424,10 +456,10 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     var h = [];
     h.push(headerHTML());
     h.push('<main class="main wrap">');
-    if (ui.tab !== 'me' && ui.tab !== 'input') h.push(dayBarHTML());
+    if (ui.tab !== 'me' && ui.tab !== 'input' && ui.tab !== 'done' && ui.tab !== 'board') h.push(dayBarHTML());
     if (ui.restore) h.push(restoreHTML());
     if (ui.msg) h.push('<div class="toast" role="status">' + esc(ui.msg) + '</div>');
-    h.push(({ input: intakeView, time: timeView, shift: shiftView, people: peopleView, me: meView }[ui.tab] || timeView)());
+    h.push(({ input: intakeView, done: doneView, time: timeView, shift: shiftView, people: peopleView, board: boardView, me: meView }[ui.tab] || timeView)());
     h.push('</main>');
     h.push(saveBarHTML());
     h.push(tabBarHTML());
@@ -683,9 +715,64 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     });
     h += '</div><div class="intake-foot"><button class="btn primary" data-act="intake-submit"' + (pending ? ' disabled' : '') + '>' + (pending ? '送信中…' : 'この内容で登録する') + '</button>' +
       '<p class="intake-status' + (intakeStatus.indexOf('登録しました') >= 0 ? ' ok' : intakeStatus ? ' error' : '') + '" role="status">' + esc(intakeStatus) + '</p>' +
-      '<p class="intake-privacy">入力したお名前と参加できる時間は、公開シフト表に表示されます。修正用の情報はこの端末に保存されます。</p></div></section>';
+      '<p class="intake-privacy">入力したお名前と参加できる時間は、公開シフト表に表示されます。修正用の情報はこの端末に保存されます。</p>' +
+      '<p class="intake-jump">登録済みの方は <button class="link-button" data-act="go-time">シフト表を見る →</button></p></div></section>';
     return h;
   }
+
+  function boardView() {
+    var h = '<section class="board-page"><div class="board-head"><p class="eyebrow">吉野ヶ里 ふるさと炎祭り</p><h2>お知らせ・掲示板</h2><p>当日の連絡や参加者からのメッセージを確認できます。</p></div>' + noticeHTML();
+    h += '<section class="board-card"><div class="sec-head"><h2>みんなの掲示板<small>' + boardPosts.length + '件</small></h2></div>';
+    if (!boardPosts.length) h += '<p class="board-empty">投稿はまだありません。</p>';
+    else h += '<div class="board-posts">' + boardPosts.map(function (post) {
+      var d = new Date(post.created);
+      var when = isNaN(d) ? '' : (d.getMonth()+1) + '/' + d.getDate() + ' ' + fromMin(d.getHours()*60+d.getMinutes());
+      return '<article class="board-post"><div class="board-post-head"><b>' + esc(post.name) + '</b><time>' + esc(when) + '</time></div><p>' + esc(post.message) + '</p></article>';
+    }).join('') + '</div>';
+    h += '</section><section class="board-card"><h2>メッセージを投稿</h2>';
+    if (!boardReady) {
+      h += '<p>' + (liveLoaded ? '投稿機能を準備しています。お知らせは上で確認できます。' : '掲示板を読み込んでいます。少し待ってからもう一度ご確認ください。') + '</p>';
+    } else if (!lsGet('intake-id') || !lsGet('intake-token') || !liveMembers.some(function (m) { return m.id === lsGet('intake-id'); })) {
+      h += '<p>投稿するには、先に参加できる時間を登録してください。</p><button class="btn primary" data-act="go-input">入力画面へ</button>';
+    } else {
+      h += '<p class="board-author">投稿者：' + esc(mName(lsGet('intake-id')) || intake.name) + '</p>' +
+        '<div class="field"><label for="board-message">メッセージ（300文字まで）</label><textarea id="board-message" maxlength="300" placeholder="例：24日は午前から参加します。よろしくお願いします！">' + esc(boardDraft) + '</textarea></div>' +
+        '<button class="btn primary board-submit" data-act="board-submit"' + (boardPending ? ' disabled' : '') + '>' + (boardPending ? '投稿中…' : '掲示板に投稿する') + '</button>' +
+        '<p class="board-status" role="status">' + esc(boardStatus) + '</p>' +
+        '<p class="hint">投稿は全員に公開されます。個人情報の記載は控えてください。</p>';
+    }
+    return h + '</section></section>';
+  }
+  function readBoard() {
+    var el = document.getElementById('board-message');
+    if (el) { boardDraft = el.value; lsSet('board-draft', boardDraft); }
+  }
+  function submitBoard() {
+    readBoard();
+    var message = boardDraft.trim();
+    if (!message || message.length > 300) { boardStatus = 'メッセージを1〜300文字で入力してください。'; render(); return; }
+    var memberId = lsGet('intake-id'), token = lsGet('intake-token');
+    if (!memberId || !token) { boardStatus = '先に参加できる時間を登録してください。'; render(); return; }
+    var id = randomKey();
+    boardPending = { id:id, attempts:0 }; boardStatus = ''; render();
+    var frame = document.getElementById('intake-target');
+    if (!frame) { frame = document.createElement('iframe'); frame.id='intake-target'; frame.name='intake-target'; frame.hidden=true; document.body.appendChild(frame); }
+    var form = document.createElement('form'); form.method='POST'; form.action=API_URL; form.target='intake-target'; form.style.display='none';
+    var field = document.createElement('input'); field.name='payload';
+    field.value=JSON.stringify({ kind:'post', id:id, memberId:memberId, token:token, message:message, website:'' });
+    form.appendChild(field); document.body.appendChild(form);
+    frame.onload = function () { setTimeout(loadLive, 700); };
+    form.submit(); form.remove();
+    setTimeout(function () { if (boardPending) loadLive(); }, 2500);
+  }
+
+  function doneView() {
+    var h = '<section class="done-card"><div class="done-badge" aria-hidden="true">✓</div><p class="eyebrow">登録完了</p><h2>' + esc(intake.name) + 'さん、ありがとうございます</h2><p>参加できる時間を登録しました。内容はシフト表で確認できます。</p>';
+    h += '<div class="done-actions"><button class="btn primary" data-act="go-time">シフト表を見る →</button><button class="btn" data-act="go-board">お知らせ・掲示板を見る</button></div>';
+    h += '<p class="hint">時間を直す場合は、下の「入力」から変更できます。</p></section>';
+    return h;
+  }
+
   function readIntake() {
     var name = document.getElementById('intake-name');
     if (name) intake.name = name.value;
@@ -719,7 +806,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     if (old) old.remove();
     var s = document.createElement('script');
     s.id = 'live-json'; s.src = API_URL + '?action=list&t=' + Date.now();
-    s.onerror = function () { if (pending) { intakeStatus = '通信できませんでした。少し待って再送してください。'; pending = null; render(); } };
+    s.onerror = function () { if (pending) { intakeStatus = '通信できませんでした。少し待って再送してください。'; pending = null; render(); } if (boardPending) { boardStatus = '通信できませんでした。少し待って再投稿してください。'; boardPending = null; render(); } };
     document.head.appendChild(s);
   }
   window.hmReceiveAvailability = function (data) {
@@ -728,15 +815,25 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     liveAvail = {};
     records.forEach(function (r) { if (r && r.id && r.avail) liveAvail[r.id] = r.avail; });
     liveLoaded = true;
+    boardReady = !!(data && Array.isArray(data.posts));
+    boardPosts = boardReady ? data.posts.filter(function (p) { return p && p.id && p.name && p.message; }) : [];
+    var boardJustPosted = false;
+    if (boardPending) {
+      var posted = boardPosts.some(function (p) { return p.id === boardPending.id; });
+      if (posted) { boardPending = null; boardDraft = ''; lsDel('board-draft'); boardStatus = '投稿しました。'; boardJustPosted = true; }
+      else if (++boardPending.attempts < 8) setTimeout(loadLive, 1500);
+      else { boardPending = null; boardStatus = '投稿を確認できませんでした。少し待って再投稿してください。'; }
+    }
     if (pending) {
       var found = records.find(function (r) { return r.id === pending.id; });
       if (found && found.name === pending.name && JSON.stringify(found.avail) === JSON.stringify(pending.avail)) {
-        pending = null; intakeStatus = '登録しました。シフト表にも反映されています。'; ui.me = found.id; lsSet('me', found.id);
+        pending = null; intakeStatus = '登録しました。シフト表にも反映されています。'; ui.me = found.id; lsSet('me', found.id); ui.tab = 'done'; window.scrollTo(0, 0);
       } else if (++pending.attempts < 8) {
         setTimeout(loadLive, 1500);
       } else { pending = null; intakeStatus = '反映を確認できませんでした。少し待って再送してください。'; }
     }
     if (ui.tab === 'input') readIntake();
+    if (ui.tab === 'board' && !boardJustPosted) readBoard();
     render();
   };
   function submitIntake() {
@@ -1010,6 +1107,7 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
     var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
     if (ui.sheet && act !== 'close') readSheet();
     if (ui.tab === 'input') readIntake();
+    if (ui.tab === 'board') readBoard();
     switch (act) {
       case 'intake-add':
         var day = dayById(id), arr = intake.avail[id] = intake.avail[id] || [];
@@ -1017,6 +1115,10 @@ h1 { font-family: "Zen Kaku Gothic New", "Hiragino Sans", sans-serif; font-size:
       case 'intake-all': var full = dayById(id); if (full) { intake.avail[id] = [[full.start,full.end]]; saveIntake(); render(); } break;
       case 'intake-remove': if (intake.avail[id]) { intake.avail[id].splice(+b.getAttribute('data-i'),1); saveIntake(); render(); } break;
       case 'intake-submit': submitIntake(); break;
+      case 'go-time': ui.tab = 'time'; render(); window.scrollTo(0, 0); break;
+      case 'go-board': ui.tab = 'board'; render(); window.scrollTo(0, 0); break;
+      case 'go-input': ui.tab = 'input'; render(); window.scrollTo(0, 0); break;
+      case 'board-submit': submitBoard(); break;
       case 'tab': ui.tab = id; ui.open = -1; lsSet('tab', id); render(); window.scrollTo(0, 0); break;
       case 'day': ui.day = id; ui.open = -1; lsSet('day', id); render(); break;
       case 'slot': var i = +b.getAttribute('data-i'); ui.open = ui.open === i ? -1 : i; render(); break;
